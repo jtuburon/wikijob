@@ -70,26 +70,27 @@ public class WikiMapper extends Mapper<LongWritable, Text, Text, Text> {
                 String vals[]= birthDateValue.split("\\|");
                 if(vals.length>3){
                     int index=0;
-                    while(!Pattern.matches("\\d{4}", vals[index])){
+                    while (index + 3 <= vals.length && !Pattern.matches("\\d{4}", vals[index])) {
                         index++;
                     }
-                    String year= vals[index];
-                    String month= vals[index+1];
-                    String day= vals[index+2];
-                    
-                    Date birthDate;
-                    try {
-                        String dateVal= year+"-"+month+"-"+ day;
-                        System.out.println(dateVal);
-                        birthDate = df.parse(dateVal);                        
-                        if (birthDate.after(startDate) && birthDate.before(endDate)) {
-                            String person = extractPersonName(article);
-                            context.write(new Text(person), new Text("born_on: " + dateVal));
+                    if (index + 3 <= vals.length) {
+                        String year = vals[index];
+                        String month = vals[index + 1];
+                        String day = vals[index + 2];
+
+                        Date birthDate;
+                        try {
+                            String dateVal = year + "-" + month + "-" + day;
+                            birthDate = df.parse(dateVal);
+                            if (birthDate.after(startDate) && birthDate.before(endDate)) {
+                                String person = extractPersonName(article);
+                                context.write(new Text(person), new Text("born_on: " + dateVal));
+                            }
+
+                        } catch (ParseException ex) {
+                            ex.printStackTrace();
                         }
-                        
-                    } catch (ParseException ex) {
-                        ex.printStackTrace();
-                    }                       
+                    }                                           
                 }
             }
             
@@ -99,27 +100,28 @@ public class WikiMapper extends Mapper<LongWritable, Text, Text, Text> {
                 String vals[]= deathDateValue.split("\\|");
                 if(vals.length>3){
                     int index=0;
-                    while(!Pattern.matches("\\d{4}", vals[index])){
+                    while(index + 3 <= vals.length && !Pattern.matches("\\d{4}", vals[index])){
                         index++;
                     }
-                    String year= vals[index];
-                    String month= vals[index+1];
-                    String day= vals[index+2];
                     
-                    Date deathDate;
-                    try {
-                        String dateVal= year+"-"+month+"-"+ day;
-                        System.out.println(dateVal);
-                        deathDate = df.parse(dateVal);                        
-                        if (deathDate.after(startDate) && deathDate.before(endDate)) {
-                            String person = extractPersonName(article);
-                            context.write(new Text(person), new Text("died_on: " + dateVal));
+                    if (index + 3 <= vals.length) {
+                        String year = vals[index];
+                        String month = vals[index + 1];
+                        String day = vals[index + 2];
+
+                        Date deathDate;
+                        try {
+                            String dateVal = year + "-" + month + "-" + day;
+                            deathDate = df.parse(dateVal);
+                            if (deathDate.after(startDate) && deathDate.before(endDate)) {
+                                String person = extractPersonName(article);
+                                context.write(new Text(person), new Text("died_on: " + dateVal));
+                            }
+                        } catch (ParseException ex) {
+                            ex.printStackTrace();
                         }
-                    } catch (ParseException ex) {
-                        ex.printStackTrace();
-                    }                       
-                }else{
-                    System.out.println("No tiene fechas");
+                    }
+                                           
                 }
             }
         }
