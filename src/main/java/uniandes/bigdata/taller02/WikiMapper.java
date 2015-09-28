@@ -21,120 +21,114 @@ import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Mapper;
 
-public class WikiMapper extends Mapper<LongWritable, Text, Text, Text> {    
-    
+public class WikiMapper extends Mapper<LongWritable, Text, Text, Text> {
+
+    private final static SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
+    private final static Pattern DATE_PATTERN = Pattern.compile("(\\d{4})\\|(\\d{1,2})\\|(\\d{1,2})");
+
+
     @Override
     protected void map(LongWritable key, Text value,
             Context context)
             throws IOException, InterruptedException {
-        String country= context.getConfiguration().get(FilteringInputParams.COUNTRY_FILTER_PARAM);
-        String fromDate= context.getConfiguration().get(FilteringInputParams.FROM_DATE_FILTER_PARAM);
-        String toDate= context.getConfiguration().get(FilteringInputParams.TO_DATE_FILTER_PARAM);
+        String country = context.getConfiguration().get(FilteringInputParams.COUNTRY_FILTER_PARAM);
+        String fromDate = context.getConfiguration().get(FilteringInputParams.FROM_DATE_FILTER_PARAM);
+        String toDate = context.getConfiguration().get(FilteringInputParams.TO_DATE_FILTER_PARAM);
         String article = value.toString();
-        
-        Date startDate= null;
-        Date endDate=null;
+
+        Date startDate = null;
+        Date endDate = null;
         SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
-        try {            
+        try {
             startDate = df.parse(fromDate);
-            endDate = df.parse(toDate);            
-        } catch (ParseException ex) {            
+            endDate = df.parse(toDate);
+        } catch (ParseException ex) {
         }
-        
+
         Pattern p = Pattern.compile("(birth_date)|(birth_place)|(death_date)|(death_place)");
         Matcher m = p.matcher(article);
-        boolean isAPerson= m.find();
-        
-        if(isAPerson){
-            Matcher birthPlaceMatcher= FilteringPatterns.BIRTH_PLACE_PATTERN.matcher(article);
-            if(birthPlaceMatcher.find()){                
-                String birthPlaceValue= birthPlaceMatcher.group();                
-                if (birthPlaceValue.contains(country)){
-                    String person= extractPersonName(article);
-                    context.write(new Text(person), new Text("born_in: "+country));
-                }
-            }
-            
-            Matcher deathPlaceMatcher= FilteringPatterns.DEATH_PLACE_PATTERN.matcher(article);
-            if(deathPlaceMatcher.find()){
-                String deathPlaceValue= deathPlaceMatcher.group();
-                if (deathPlaceValue.contains(country)){
-                    String person= extractPersonName(article);
-                    context.write(new Text(person), new Text("died_in: "+country));
-                }
-            }
-            
-            Matcher birthDateMatcher= FilteringPatterns.BIRTH_DATE_PATTERN.matcher(article);
-            if(birthDateMatcher.find()){                
-                String birthDateValue= birthDateMatcher.group(birthDateMatcher.groupCount());
-                String vals[]= birthDateValue.split("\\|");
-                if(vals.length>3){
-                    int index=0;
-                    while (index + 3 <= vals.length && !Pattern.matches("\\d{4}", vals[index])) {
-                        index++;
-                    }
-                    if (index + 3 <= vals.length) {
-                        String year = vals[index];
-                        String month = vals[index + 1];
-                        String day = vals[index + 2];
+        boolean isAPerson = m.find();
 
-                        Date birthDate;
-                        try {
-                            String dateVal = year + "-" + month + "-" + day;
-                            birthDate = df.parse(dateVal);
-                            if (birthDate.after(startDate) && birthDate.before(endDate)) {
-                                String person = extractPersonName(article);
-                                context.write(new Text(person), new Text("born_on: " + dateVal));
+        if (isAPerson) {
+            Matcher birthPlaceMatcher = FilteringPatterns.BIRTH_PLACE_PATTERN.matcher(article);
+            if (birthPlaceMatcher.find()) {
+                String birthPlaceValue = birthPlaceMatcher.group();
+                if (birthPlaceValue.contains(country)) {
+                    String person = extractPersonName(article);
+                    context.write(new Text(person), new Text("born_in: " + country));
+                    Matcher birthDateMatcher = FilteringPatterns.BIRTH_DATE_PATTERN.matcher(article);
+                    if (birthDateMatcher.find()) {
+                        String birthDateValue = birthDateMatcher.group(birthDateMatcher.groupCount());
+                        String birthDateString = extractDateAsString(birthDateValue);
+                        if (birthDateString != null) {
+                            Date birthDate = convertToDate(birthDateString);
+                            if (birthDate != null) {
+                                if (birthDate.after(startDate) && birthDate.before(endDate)) {
+                                    context.write(new Text(person), new Text("born_on: " + birthDateString));
+                                }
                             }
-
-                        } catch (ParseException ex) {
-                            ex.printStackTrace();
-                        }
-                    }                                           
-                }
-            }
-            
-            Matcher deathDateMatcher= FilteringPatterns.DEATH_DATE_PATTERN.matcher(article);
-            if(deathDateMatcher.find()){                
-                String deathDateValue= deathDateMatcher.group(deathDateMatcher.groupCount());
-                String vals[]= deathDateValue.split("\\|");
-                if(vals.length>3){
-                    int index=0;
-                    while(index + 3 <= vals.length && !Pattern.matches("\\d{4}", vals[index])){
-                        index++;
-                    }
-                    
-                    if (index + 3 <= vals.length) {
-                        String year = vals[index];
-                        String month = vals[index + 1];
-                        String day = vals[index + 2];
-
-                        Date deathDate;
-                        try {
-                            String dateVal = year + "-" + month + "-" + day;
-                            deathDate = df.parse(dateVal);
-                            if (deathDate.after(startDate) && deathDate.before(endDate)) {
-                                String person = extractPersonName(article);
-                                context.write(new Text(person), new Text("died_on: " + dateVal));
-                            }
-                        } catch (ParseException ex) {
-                            ex.printStackTrace();
                         }
                     }
-                                           
                 }
             }
+
+            Matcher deathPlaceMatcher = FilteringPatterns.DEATH_PLACE_PATTERN.matcher(article);
+            if (deathPlaceMatcher.find()) {
+                String deathPlaceValue = deathPlaceMatcher.group();
+                if (deathPlaceValue.contains(country)) {
+                    String person = extractPersonName(article);
+                    context.write(new Text(person), new Text("died_in: " + country));
+                    Matcher deathDateMatcher = FilteringPatterns.DEATH_DATE_PATTERN.matcher(article);
+                    if (deathDateMatcher.find()) {
+                        String deathDateValue = deathDateMatcher.group(deathDateMatcher.groupCount());
+                        String deathDateString = extractDateAsString(deathDateValue);
+                        if (deathDateString != null) {
+                            Date deathDate = convertToDate(deathDateString);
+                            if (deathDate != null) {
+                                if (deathDate.after(startDate) && deathDate.before(endDate)) {
+                                    context.write(new Text(person), new Text("born_on: " + deathDateString));
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
         }
     }
-    
-    private String extractPersonName(String article){
+
+    private String extractPersonName(String article) {
         Pattern p = Pattern.compile("<title>(.*)</title>");
         Matcher m = p.matcher(article);
         if (m.find()) {
             String person_name = m.group(1);
             return person_name;
-        }else{
+        } else {
             return null;
         }
+    }
+
+    
+    private String extractDateAsString(String line) {
+        Matcher m = DATE_PATTERN.matcher(line);
+        if (m.find()) {
+            String year = m.group(1);
+            String month = m.group(2);
+            String day = m.group(3);
+
+            String dateVal = year + "-" + month + "-" + day;
+            return dateVal;
+        }
+        return null;
+    }
+
+    private Date convertToDate(String dateString) {
+        Date date;
+        try {
+            date = DATE_FORMAT.parse(dateString);
+            return date;
+        } catch (ParseException ex) {
+        }
+        return null;
     }
 }
