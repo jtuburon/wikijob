@@ -14,18 +14,19 @@ import org.apache.hadoop.mapreduce.Reducer;
  * @author teo
  */
 public class SamplerReducer extends Reducer<Text, Text, Text, Text> {
-    private final static int TOTAL=1000000;
-    private static int counter=0;
+
+    private final static int TOTAL = 1000000;
 
     protected void reduce(Text key, Iterable<Text> values,
             Reducer.Context context)
             throws IOException, InterruptedException {
+        int counter = 0;
         for (Text t : values) {
-            if(counter<TOTAL){
-                context.write(new Text(""), t);
-                counter++;
+            if (counter < TOTAL) {
+                context.write(key, t);
+                counter++;                
             }
-        }        
+        }
     }
 
 }

@@ -49,6 +49,8 @@ public class SamplerJob {
                 conf.set("textinputformat.record.delimiter","</page>");
                 conf.set("mapreduce.output.fileoutputformat.compress", "true");
                 conf.set("mapred.output.compression.codec", "org.apache.hadoop.io.compress.BZip2Codec");
+                conf.set("mapred.reduce.tasks", "1");
+                conf.set("mapreduce.job.running.reduce.limit", "1");
 
                 Job wcJob=Job.getInstance(conf, "WikiArticlesExplorer Job");
 		wcJob.setJarByClass(SamplerJob.class);
@@ -65,6 +67,7 @@ public class SamplerJob {
 		wcJob.setReducerClass(SamplerReducer.class);
 		wcJob.setOutputKeyClass(Text.class);
 		wcJob.setOutputValueClass(Text.class);
+                wcJob.setNumReduceTasks(1);
 		
 		///////////////////////////
 		//Input Format
