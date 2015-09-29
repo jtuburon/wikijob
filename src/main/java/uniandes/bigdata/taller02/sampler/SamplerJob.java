@@ -1,64 +1,54 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package uniandes.bigdata.taller02.sampler;
 
 import java.io.IOException;
+
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.SequenceFile.CompressionType;
 import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.compress.BZip2Codec;
+import org.apache.hadoop.io.compress.CompressionCodec;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
-import uniandes.bigdata.taller02.FilteringInputParams;
-import uniandes.bigdata.taller02.WikiMapper;
-import uniandes.bigdata.taller02.WikiReducer;
 
-/**
- *
- * @author teo
- */
 public class SamplerJob {
-    
-    public static void main(String[] args) {
-        if (args.length < 2) {
-            System.out.println("Se necesitan las carpetas de entrada y salida");
-            System.exit(-1);
-        }
-        String entrada = args[0]; 
-        String salida = args[1];
-        
-        try {
-            ejecutarJob(entrada, salida);           
-        } catch (Exception e) { 
-            e.printStackTrace();
-        }
-
-    }
-
-    public static void ejecutarJob(String entrada, String salida) throws IOException, ClassNotFoundException, InterruptedException {
-
+	public static void main(String[] args)  {
+		if(args.length<2){
+			System.out.println("Se necesitan las carpetas de entrada y salida");
+			System.exit(-1);
+		}
+		String entrada = args[0]; //carpeta de entrada
+		String salida = args[1];//La carpeta de salida no puede existir
+		
+		try {
+			ejecutarJob(entrada, salida);
+		} catch (Exception e) { //Puede ser IOException, ClassNotFoundException o InterruptedException
+			e.printStackTrace();
+		} 
+		
+	}
+	public static void ejecutarJob(String entrada, String salida) throws IOException,ClassNotFoundException, InterruptedException
+	{
 		/**
-		 * Objeto de configuración, dependiendo de la versión de Hadoop 
+		 * Objeto de configuraci�n, dependiendo de la versi�n de Hadoop 
 		 * uno u otro es requerido. 
-		 *
-                 */ 
-		Configuration conf = new Configuration();		
-                conf.set("textinputformat.record.delimiter","</page>");
-                conf.set("mapreduce.output.fileoutputformat.compress", "true");
-                conf.set("mapred.output.compression.codec", "org.apache.hadoop.io.compress.BZip2Codec");
-                conf.set("mapred.reduce.tasks", "1");
-                conf.set("mapreduce.job.running.reduce.limit", "1");
-
-                Job wcJob=Job.getInstance(conf, "WikiArticlesExplorer Job");
+		 * */
+		Configuration conf = new Configuration();
+		conf.set("textinputformat.record.delimiter","</page>");
+		conf.set("mapreduce.output.fileoutputformat.compress", "true");
+        conf.set("mapred.output.compression.codec", "org.apache.hadoop.io.compress.BZip2Codec");
+		//conf.setBoolean("mapreduce.output.fileoutputformat.compress", true);
+		//conf.setClass("mapreduce.output.fileoutputformat.compress.codec", BZip2Codec.class, CompressionCodec.class);
+		Job wcJob=Job.getInstance(conf, "Generate File Job");
 		wcJob.setJarByClass(SamplerJob.class);
 		//////////////////////
 		//Mapper
 		//////////////////////
-
-		wcJob.setMapperClass(SamplerMapper.class);		
+		
+		wcJob.setMapperClass(SamplerMapper.class);
+		
 		wcJob.setMapOutputKeyClass(Text.class);
 		wcJob.setMapOutputValueClass(Text.class);
 		///////////////////////////
@@ -67,7 +57,6 @@ public class SamplerJob {
 		wcJob.setReducerClass(SamplerReducer.class);
 		wcJob.setOutputKeyClass(Text.class);
 		wcJob.setOutputValueClass(Text.class);
-                wcJob.setNumReduceTasks(1);
 		
 		///////////////////////////
 		//Input Format
@@ -76,9 +65,8 @@ public class SamplerJob {
 		//pero no son equivalentes. 
 		//Se usa, en este caso, org.apache.hadoop.mapreduce.lib.input.TextInputFormat
 		TextInputFormat.setInputPaths(wcJob, new Path(entrada));
-		//wcJob.setInputFormatClass(XmlInputFormat.class); 
-                wcJob.setInputFormatClass(TextInputFormat.class); 
-          	
+		wcJob.setInputFormatClass(TextInputFormat.class); 
+		
 		////////////////////
 		///Output Format
 		//////////////////////
