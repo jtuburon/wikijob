@@ -48,6 +48,8 @@ public class WikiMapper extends Mapper<LongWritable, Text, Text, Text> {
         Pattern p = Pattern.compile("(birth_date)|(birth_place)|(death_date)|(death_place)");
         Matcher m = p.matcher(article);
         boolean isAPerson = m.find();
+        boolean children_added=false;
+        boolean spouses_added=false;
 
         if (isAPerson) {
             Matcher birthPlaceMatcher = FilteringPatterns.BIRTH_PLACE_PATTERN.matcher(article);
@@ -67,6 +69,30 @@ public class WikiMapper extends Mapper<LongWritable, Text, Text, Text> {
                                     context.write(new Text(person), new Text("born_on: " + birthDateString));
                                 }
                             }
+                        }
+                    }
+                    
+                    Matcher spouseMatcher = FilteringPatterns.SPOUSE_PATTERN.matcher(article);
+                    if (spouseMatcher.find()) {
+                        String info = spouseMatcher.group("spouseinfo");
+                        Matcher personMatcher = FilteringPatterns.SPOUSE_PATTERN_PERSON.matcher(info);
+                        while (personMatcher.find()) {
+                            String s_person = personMatcher.group("personinfo");
+                            s_person= s_person.split("\\|")[0];
+                            context.write(new Text(person), new Text("married_with:" + s_person));
+                            spouses_added=true;
+                        }
+                    }
+                    
+                    Matcher childrenMatcher = FilteringPatterns.CHILDREN_PATTERN.matcher(article);
+                    if (childrenMatcher.find()) {
+                        String info = childrenMatcher.group("childreninfo");
+                        Matcher personMatcher = FilteringPatterns.CHILDREN_PATTERN_PERSON.matcher(info);
+                        while (personMatcher.find()) {
+                            String s_person = personMatcher.group("personinfo");
+                            s_person= s_person.split("\\|")[0];
+                            context.write(new Text(person), new Text("son_or_daughter:" + s_person));
+                            children_added=true;
                         }
                     }
                 }
@@ -91,9 +117,35 @@ public class WikiMapper extends Mapper<LongWritable, Text, Text, Text> {
                             }
                         }
                     }
+
+                    if (!spouses_added) {
+                        Matcher spouseMatcher = FilteringPatterns.SPOUSE_PATTERN.matcher(article);
+                        if (spouseMatcher.find()) {
+                            String info = spouseMatcher.group("spouseinfo");
+                            Matcher personMatcher = FilteringPatterns.SPOUSE_PATTERN_PERSON.matcher(info);
+                            while (personMatcher.find()) {
+                                String s_person = personMatcher.group("personinfo");
+                                s_person= s_person.split("\\|")[0];
+                                context.write(new Text(person), new Text("married_with:" + s_person));
+                                spouses_added = true;
+                            }
+                        }
+                    }
+                    if (!children_added) {
+                        Matcher childrenMatcher = FilteringPatterns.CHILDREN_PATTERN.matcher(article);
+                        if (childrenMatcher.find()) {
+                            String info = childrenMatcher.group("childreninfo");
+                            Matcher personMatcher = FilteringPatterns.CHILDREN_PATTERN_PERSON.matcher(info);
+                            while (personMatcher.find()) {
+                                String s_person = personMatcher.group("personinfo");
+                                s_person= s_person.split("\\|")[0];
+                                context.write(new Text(person), new Text("son_or_daughter:" + s_person));
+                                children_added = true;
+                            }
+                        }
+                    }
                 }
             }
-
         }
     }
 
