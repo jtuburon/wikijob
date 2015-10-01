@@ -58,7 +58,7 @@ public class WikiMapper extends Mapper<LongWritable, Text, Text, Text> {
                 if (birthPlaceValue.contains(country)) {
                     String person = extractPersonName(article);
                     context.write(new Text(person), new Text("born_in: " + country));
-                    /*
+                    
                     Matcher birthDateMatcher = FilteringPatterns.BIRTH_DATE_PATTERN.matcher(article);
                     if (birthDateMatcher.find()) {
                         String birthDateValue = birthDateMatcher.group(birthDateMatcher.groupCount());
@@ -96,11 +96,11 @@ public class WikiMapper extends Mapper<LongWritable, Text, Text, Text> {
                             children_added=true;
                         }
                     }
-                    */
+                    
                 }
             }
             
-            /*
+            
             Matcher deathPlaceMatcher = FilteringPatterns.DEATH_PLACE_PATTERN.matcher(article);
             if (deathPlaceMatcher.find()) {
                 String deathPlaceValue = deathPlaceMatcher.group();
@@ -150,8 +150,7 @@ public class WikiMapper extends Mapper<LongWritable, Text, Text, Text> {
                     }
                     
                 }
-            }
-            */
+            }            
         }
     }
 
