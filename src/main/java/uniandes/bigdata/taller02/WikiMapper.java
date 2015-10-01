@@ -70,8 +70,8 @@ public class WikiMapper extends Mapper<LongWritable, Text, Text, Text> {
                                 }
                             }
                         }
-                    }
-                    
+                    }                    
+                    /*
                     Matcher spouseMatcher = FilteringPatterns.SPOUSE_PATTERN.matcher(article);
                     if (spouseMatcher.find()) {
                         String info = spouseMatcher.group("spouseinfo");
@@ -95,6 +95,7 @@ public class WikiMapper extends Mapper<LongWritable, Text, Text, Text> {
                             children_added=true;
                         }
                     }
+                    */
                 }
             }
 
@@ -117,7 +118,7 @@ public class WikiMapper extends Mapper<LongWritable, Text, Text, Text> {
                             }
                         }
                     }
-
+                    /*
                     if (!spouses_added) {
                         Matcher spouseMatcher = FilteringPatterns.SPOUSE_PATTERN.matcher(article);
                         if (spouseMatcher.find()) {
@@ -144,6 +145,7 @@ public class WikiMapper extends Mapper<LongWritable, Text, Text, Text> {
                             }
                         }
                     }
+                    */
                 }
             }
         }

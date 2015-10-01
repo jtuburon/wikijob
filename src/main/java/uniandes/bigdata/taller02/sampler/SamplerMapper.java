@@ -11,11 +11,11 @@ import org.apache.hadoop.mapreduce.Mapper;
 
 public class SamplerMapper extends Mapper<LongWritable, Text, Text, Text> {
 	
-	private final static int TOTAL=1000000;
-
+    private final static int TOTAL=1000000;
+    private static int counter = 0;
+    	
 	@Override
     protected void map(LongWritable key, Text value, Mapper.Context context) throws IOException, InterruptedException {
-    	int counter = 0;
     	double random= Math.random();
         if(random >=0.7 && random < 0.8){
             if(counter<TOTAL){
