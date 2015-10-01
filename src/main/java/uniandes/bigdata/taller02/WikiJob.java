@@ -58,8 +58,10 @@ public class WikiJob {
                 conf.set(FilteringInputParams.COUNTRY_FILTER_PARAM, country);
                 conf.set(FilteringInputParams.FROM_DATE_FILTER_PARAM, fromDate);
                 conf.set(FilteringInputParams.TO_DATE_FILTER_PARAM, toDate);
+                long milliSeconds = 1000*60*6;
+                conf.setLong("mapred.task.timeout", milliSeconds);
                 
-                conf.set("io.serializations","org.apache.hadoop.io.serializer.JavaSerialization,org.apache.hadoop.io.serializer.WritableSerialization");
+                //conf.set("io.serializations","org.apache.hadoop.io.serializer.JavaSerialization,org.apache.hadoop.io.serializer.WritableSerialization");
                 
 		Job wcJob=Job.getInstance(conf, "WikiArticlesExplorer Job");
 		wcJob.setJarByClass(WikiJob.class);
