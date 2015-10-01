@@ -58,6 +58,7 @@ public class WikiMapper extends Mapper<LongWritable, Text, Text, Text> {
                 if (birthPlaceValue.contains(country)) {
                     String person = extractPersonName(article);
                     context.write(new Text(person), new Text("born_in: " + country));
+                    /*
                     Matcher birthDateMatcher = FilteringPatterns.BIRTH_DATE_PATTERN.matcher(article);
                     if (birthDateMatcher.find()) {
                         String birthDateValue = birthDateMatcher.group(birthDateMatcher.groupCount());
@@ -71,7 +72,7 @@ public class WikiMapper extends Mapper<LongWritable, Text, Text, Text> {
                             }
                         }
                     }                    
-                    /*
+                    
                     Matcher spouseMatcher = FilteringPatterns.SPOUSE_PATTERN.matcher(article);
                     if (spouseMatcher.find()) {
                         String info = spouseMatcher.group("spouseinfo");
@@ -98,13 +99,15 @@ public class WikiMapper extends Mapper<LongWritable, Text, Text, Text> {
                     */
                 }
             }
-
+            
+            /*
             Matcher deathPlaceMatcher = FilteringPatterns.DEATH_PLACE_PATTERN.matcher(article);
             if (deathPlaceMatcher.find()) {
                 String deathPlaceValue = deathPlaceMatcher.group();
                 if (deathPlaceValue.contains(country)) {
                     String person = extractPersonName(article);
                     context.write(new Text(person), new Text("died_in: " + country));
+                    
                     Matcher deathDateMatcher = FilteringPatterns.DEATH_DATE_PATTERN.matcher(article);
                     if (deathDateMatcher.find()) {
                         String deathDateValue = deathDateMatcher.group(deathDateMatcher.groupCount());
@@ -118,7 +121,7 @@ public class WikiMapper extends Mapper<LongWritable, Text, Text, Text> {
                             }
                         }
                     }
-                    /*
+                    
                     if (!spouses_added) {
                         Matcher spouseMatcher = FilteringPatterns.SPOUSE_PATTERN.matcher(article);
                         if (spouseMatcher.find()) {
@@ -145,9 +148,10 @@ public class WikiMapper extends Mapper<LongWritable, Text, Text, Text> {
                             }
                         }
                     }
-                    */
+                    
                 }
             }
+            */
         }
     }
 
