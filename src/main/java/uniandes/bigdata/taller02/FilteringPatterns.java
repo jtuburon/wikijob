@@ -18,6 +18,8 @@ import java.util.regex.Pattern;
 
 */
 public class FilteringPatterns {    
+    public static Pattern INFO_BOX_PATTERN = Pattern.compile("\\{\\{Infobox\\s+(.*?)'''", Pattern.DOTALL);
+    
     public static Pattern BIRTH_PLACE_PATTERN = Pattern.compile("\\|(\\s*)birth_place(\\s*)=(\\s*)(((,\\s+)?\\[\\[(.*)\\]\\])|(,\\s+)?(\\w+))+(\\s+)?\n");
     public static Pattern DEATH_PLACE_PATTERN = Pattern.compile("\\|(\\s*)death_place(\\s*)=(\\s*)(((,\\s+)?\\[\\[(.*)\\]\\])|(,\\s+)?(\\w+))+(\\s+)?\n");
     

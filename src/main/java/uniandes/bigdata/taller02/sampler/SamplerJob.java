@@ -38,7 +38,7 @@ public class SamplerJob {
 		Configuration conf = new Configuration();
 		conf.set("textinputformat.record.delimiter","</page>");
 		conf.set("mapreduce.output.fileoutputformat.compress", "true");
-        conf.set("mapred.output.compression.codec", "org.apache.hadoop.io.compress.BZip2Codec");
+                conf.set("mapred.output.compression.codec", "org.apache.hadoop.io.compress.BZip2Codec");
 		//conf.setBoolean("mapreduce.output.fileoutputformat.compress", true);
 		//conf.setClass("mapreduce.output.fileoutputformat.compress.codec", BZip2Codec.class, CompressionCodec.class);
 		Job wcJob=Job.getInstance(conf, "Generate File Job");

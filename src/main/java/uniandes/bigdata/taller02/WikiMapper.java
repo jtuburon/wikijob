@@ -26,7 +26,6 @@ public class WikiMapper extends Mapper<LongWritable, Text, Text, Text> {
     private final static SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
     private final static Pattern DATE_PATTERN = Pattern.compile("(\\d{4})\\|(\\d{1,2})\\|(\\d{1,2})");
 
-
     @Override
     protected void map(LongWritable key, Text value,
             Context context)
@@ -43,115 +42,124 @@ public class WikiMapper extends Mapper<LongWritable, Text, Text, Text> {
             startDate = df.parse(fromDate);
             endDate = df.parse(toDate);
         } catch (ParseException ex) {
+            ex.printStackTrace();
         }
 
-        Pattern p = Pattern.compile("(birth_date)|(birth_place)|(death_date)|(death_place)");
-        Matcher m = p.matcher(article);
-        boolean isAPerson = m.find();
-        boolean children_added=false;
-        boolean spouses_added=false;
+        Matcher infoboxMatcher = FilteringPatterns.INFO_BOX_PATTERN.matcher(article);
+        if (infoboxMatcher.find()) {
+            String infoBox = infoboxMatcher.group(1);
+            
+            Pattern p = Pattern.compile("(birth_date)|(birth_place)|(death_date)|(death_place)");
+            Matcher m = p.matcher(infoBox);
+            boolean isAPerson = m.find();
+            boolean children_added = false;
+            boolean spouses_added = false;
 
-        if (isAPerson) {
-            Matcher birthPlaceMatcher = FilteringPatterns.BIRTH_PLACE_PATTERN.matcher(article);
-            if (birthPlaceMatcher.find()) {
-                String birthPlaceValue = birthPlaceMatcher.group();
-                if (birthPlaceValue.contains(country)) {
-                    String person = extractPersonName(article);
-                    context.write(new Text(person), new Text("born_in: " + country));
-                    
-                    Matcher birthDateMatcher = FilteringPatterns.BIRTH_DATE_PATTERN.matcher(article);
-                    if (birthDateMatcher.find()) {
-                        String birthDateValue = birthDateMatcher.group(birthDateMatcher.groupCount());
-                        String birthDateString = extractDateAsString(birthDateValue);
-                        if (birthDateString != null) {
-                            Date birthDate = convertToDate(birthDateString);
-                            if (birthDate != null) {
-                                if (birthDate.after(startDate) && birthDate.before(endDate)) {
-                                    context.write(new Text(person), new Text("born_on: " + birthDateString));
+            if (isAPerson) {
+
+                Matcher birthPlaceMatcher = FilteringPatterns.BIRTH_PLACE_PATTERN.matcher(infoBox);
+                if (birthPlaceMatcher.find()) {
+                    String birthPlaceValue = birthPlaceMatcher.group();
+                    if (birthPlaceValue.contains(country)) {
+                        String person = extractPersonName(article);
+                        context.write(new Text(person), new Text("born_in: " + country));
+
+                        Matcher birthDateMatcher = FilteringPatterns.BIRTH_DATE_PATTERN.matcher(infoBox);
+                        if (birthDateMatcher.find()) {
+                            String birthDateValue = birthDateMatcher.group(birthDateMatcher.groupCount());
+                            String birthDateString = extractDateAsString(birthDateValue);
+                            if (birthDateString != null) {
+                                Date birthDate = convertToDate(birthDateString);
+                                if (birthDate != null) {
+                                    if (birthDate.after(startDate) && birthDate.before(endDate)) {
+                                        context.write(new Text(person), new Text("born_on: " + birthDateString));
+                                    }
                                 }
                             }
                         }
-                    }                    
-                    
-                    Matcher spouseMatcher = FilteringPatterns.SPOUSE_PATTERN.matcher(article);
-                    if (spouseMatcher.find()) {
-                        String info = spouseMatcher.group("spouseinfo");
-                        Matcher personMatcher = FilteringPatterns.SPOUSE_PATTERN_PERSON.matcher(info);
-                        while (personMatcher.find()) {
-                            String s_person = personMatcher.group("personinfo");
-                            s_person= s_person.split("\\|")[0];
-                            context.write(new Text(person), new Text("married_with:" + s_person));
-                            spouses_added=true;
-                        }
-                    }
-                    
-                    Matcher childrenMatcher = FilteringPatterns.CHILDREN_PATTERN.matcher(article);
-                    if (childrenMatcher.find()) {
-                        String info = childrenMatcher.group("childreninfo");
-                        Matcher personMatcher = FilteringPatterns.CHILDREN_PATTERN_PERSON.matcher(info);
-                        while (personMatcher.find()) {
-                            String s_person = personMatcher.group("personinfo");
-                            s_person= s_person.split("\\|")[0];
-                            context.write(new Text(person), new Text("son_or_daughter:" + s_person));
-                            children_added=true;
-                        }
-                    }
-                    
-                }
-            }
-            
-            
-            Matcher deathPlaceMatcher = FilteringPatterns.DEATH_PLACE_PATTERN.matcher(article);
-            if (deathPlaceMatcher.find()) {
-                String deathPlaceValue = deathPlaceMatcher.group();
-                if (deathPlaceValue.contains(country)) {
-                    String person = extractPersonName(article);
-                    context.write(new Text(person), new Text("died_in: " + country));
-                    
-                    Matcher deathDateMatcher = FilteringPatterns.DEATH_DATE_PATTERN.matcher(article);
-                    if (deathDateMatcher.find()) {
-                        String deathDateValue = deathDateMatcher.group(deathDateMatcher.groupCount());
-                        String deathDateString = extractDateAsString(deathDateValue);
-                        if (deathDateString != null) {
-                            Date deathDate = convertToDate(deathDateString);
-                            if (deathDate != null) {
-                                if (deathDate.after(startDate) && deathDate.before(endDate)) {
-                                    context.write(new Text(person), new Text("born_on: " + deathDateString));
-                                }
-                            }
-                        }
-                    }
-                    
-                    if (!spouses_added) {
-                        Matcher spouseMatcher = FilteringPatterns.SPOUSE_PATTERN.matcher(article);
+
+                        Matcher spouseMatcher = FilteringPatterns.SPOUSE_PATTERN.matcher(infoBox);
                         if (spouseMatcher.find()) {
                             String info = spouseMatcher.group("spouseinfo");
                             Matcher personMatcher = FilteringPatterns.SPOUSE_PATTERN_PERSON.matcher(info);
                             while (personMatcher.find()) {
                                 String s_person = personMatcher.group("personinfo");
-                                s_person= s_person.split("\\|")[0];
+                                s_person = s_person.split("\\|")[0];
                                 context.write(new Text(person), new Text("married_with:" + s_person));
                                 spouses_added = true;
                             }
                         }
-                    }
-                    if (!children_added) {
-                        Matcher childrenMatcher = FilteringPatterns.CHILDREN_PATTERN.matcher(article);
+
+                        Matcher childrenMatcher = FilteringPatterns.CHILDREN_PATTERN.matcher(infoBox);
                         if (childrenMatcher.find()) {
                             String info = childrenMatcher.group("childreninfo");
                             Matcher personMatcher = FilteringPatterns.CHILDREN_PATTERN_PERSON.matcher(info);
                             while (personMatcher.find()) {
                                 String s_person = personMatcher.group("personinfo");
-                                s_person= s_person.split("\\|")[0];
+                                s_person = s_person.split("\\|")[0];
                                 context.write(new Text(person), new Text("son_or_daughter:" + s_person));
                                 children_added = true;
                             }
                         }
+
                     }
-                    
                 }
-            }            
+
+                Matcher deathPlaceMatcher = FilteringPatterns.DEATH_PLACE_PATTERN.matcher(infoBox);
+                if (deathPlaceMatcher.find()) {
+                    String deathPlaceValue = deathPlaceMatcher.group();
+                    if (deathPlaceValue.contains(country)) {
+                        String person = extractPersonName(article);
+                        context.write(new Text(person), new Text("died_in: " + country));
+
+                        Matcher deathDateMatcher = FilteringPatterns.DEATH_DATE_PATTERN.matcher(infoBox);
+                        if (deathDateMatcher.find()) {
+                            String deathDateValue = deathDateMatcher.group(deathDateMatcher.groupCount());
+                            String deathDateString = extractDateAsString(deathDateValue);
+                            if (deathDateString != null) {
+                                Date deathDate = convertToDate(deathDateString);
+                                if (deathDate != null) {
+                                    if (deathDate.after(startDate) && deathDate.before(endDate)) {
+                                        context.write(new Text(person), new Text("born_on: " + deathDateString));
+                                    }
+                                }
+                            }
+                        }
+
+                        if (!spouses_added) {
+                            Matcher spouseMatcher = FilteringPatterns.SPOUSE_PATTERN.matcher(infoBox);
+                            if (spouseMatcher.find()) {
+                                String info = spouseMatcher.group("spouseinfo");
+                                Matcher personMatcher = FilteringPatterns.SPOUSE_PATTERN_PERSON.matcher(info);
+                                while (personMatcher.find()) {
+                                    String s_person = personMatcher.group("personinfo");
+                                    s_person = s_person.split("\\|")[0];
+                                    context.write(new Text(person), new Text("married_with:" + s_person));
+                                    spouses_added = true;
+                                }
+                            }
+                        }
+                        if (!children_added) {
+                            Matcher childrenMatcher = FilteringPatterns.CHILDREN_PATTERN.matcher(infoBox);
+                            if (childrenMatcher.find()) {
+                                String info = childrenMatcher.group("childreninfo");
+                                Matcher personMatcher = FilteringPatterns.CHILDREN_PATTERN_PERSON.matcher(info);
+                                while (personMatcher.find()) {
+                                    String s_person = personMatcher.group("personinfo");
+                                    s_person = s_person.split("\\|")[0];
+                                    context.write(new Text(person), new Text("son_or_daughter:" + s_person));
+                                    children_added = true;
+                                }
+                            }
+                        }
+
+                    }
+                }
+
+            }
+
         }
+
     }
 
     private String extractPersonName(String article) {
@@ -165,7 +173,6 @@ public class WikiMapper extends Mapper<LongWritable, Text, Text, Text> {
         }
     }
 
-    
     private String extractDateAsString(String line) {
         Matcher m = DATE_PATTERN.matcher(line);
         if (m.find()) {
